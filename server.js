@@ -1,60 +1,56 @@
 'use strict';
 
-const express     = require('express');
-const bodyParser  = require('body-parser');
-const expect      = require('chai').expect;
-const cors        = require('cors');
+const express = require('express');
+const bodyParser = require('body-parser');
+const cors = require('cors');
 require('dotenv').config();
 
-const apiRoutes         = require('./routes/api.js');
-const fccTestingRoutes  = require('./routes/fcctesting.js');
-const runner            = require('./test-runner');
+const apiRoutes = require('./routes/api.js');
+const fccTestingRoutes = require('./routes/fcctesting.js');
+const runner = require('./test-runner');
 
-let app = express();
+const app = express();
 
-app.use('/public', express.static(process.cwd() + '/public'));
+// Serve static files
+app.use('/public', express.static(__dirname + '/public'));
 
-app.use(cors({origin: '*'})); //For FCC testing purposes only
+// Enable CORS for FCC testing
+app.use(cors({ origin: '*' }));
 
-
-
+// Body parsing middleware
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-//Sample front-end
-app.route('/:project/')
-  .get(function (req, res) {
-    res.sendFile(process.cwd() + '/views/issue.html');
-  });
-
-//Index page (static HTML)
-app.route('/')
-  .get(function (req, res) {
-    res.sendFile(process.cwd() + '/views/index.html');
-  });
-
-//For FCC testing purposes
-fccTestingRoutes(app);
-
-//Routing for API 
-apiRoutes(app);  
-    
-//404 Not Found Middleware
-app.use(function(req, res, next) {
-  res.status(404)
-    .type('text')
-    .send('Not Found');
+// Serve sample front-end
+app.route('/:project/').get((req, res) => {
+  res.sendFile(__dirname + '/views/issue.html');
 });
 
-//Start our server and tests!
-const listener = app.listen(process.env.PORT || 3000, function () {
+// Serve index page
+app.route('/').get((req, res) => {
+  res.sendFile(__dirname + '/views/index.html');
+});
+
+// FCC testing routes
+fccTestingRoutes(app);
+
+// API routes
+apiRoutes(app);
+
+// 404 Not Found Middleware
+app.use((req, res, next) => {
+  res.status(404).type('text').send('Not Found');
+});
+
+// Start the server
+const listener = app.listen(process.env.PORT || 3000, () => {
   console.log('Your app is listening on port ' + listener.address().port);
-  if(process.env.NODE_ENV==='test') {
+  if (process.env.NODE_ENV === 'test') {
     console.log('Running Tests...');
-    setTimeout(function () {
+    setTimeout(() => {
       try {
         runner.run();
-      } catch(e) {
+      } catch (e) {
         console.log('Tests are not valid:');
         console.error(e);
       }
@@ -62,4 +58,4 @@ const listener = app.listen(process.env.PORT || 3000, function () {
   }
 });
 
-module.exports = app; //for testing
+module.exports = app; // for testing
